@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StatPulse — SIS-CC .Stat Suite API Monitor</title>
+  <meta name="description" content="Real-time API health dashboard for the SIS-CC .Stat Suite SDMX platform. Tracks uptime, response times, and data quality metrics." />
+
+  <!-- Chart.js is the only external dependency — loaded from a pinned CDN
+       version so the dashboard works even without a build step. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <style>
+    /* -----------------------------------------------------------------------
+       Design tokens — all colours are defined here so tweaking the palette
+       never requires hunting through scattered inline values.
+    ----------------------------------------------------------------------- */
+    :root {
+      --bg-primary:   #0d1117;
+      --bg-card:      #161b22;
+      --bg-card-alt:  #1c2128;
+      --border:       #30363d;
+      --accent:       #2f81f7;
+      --accent-hover: #388bfd;
+      --green:        #3fb950;
+      --yellow:       #d29922;
+      --red:          #f85149;
+      --text-primary: #e6edf3;
+      --text-muted:   #8b949e;
+      --text-link:    #58a6ff;
+      --radius:       8px;
+      --shadow:       0 1px 3px rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: var(--text-link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* -----------------------------------------------------------------------
+       Layout
+    ----------------------------------------------------------------------- */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .header-title { flex: 1; min-width: 200px; }
+
+    .wordmark {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .header-meta strong { color: var(--text-primary); }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    section + section { margin-top: 40px; }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    footer a { margin: 0 4px; }
+
+    .footer-disclaimer {
+      flex: 1;
+      text-align: right;
+      font-style: italic;
+      min-width: 260px;
+    }
+
+    /* -----------------------------------------------------------------------
+       Status cards grid
+    ----------------------------------------------------------------------- */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .badge-operational { background: rgba(63,185,80,0.15); color: var(--green); }
+    .badge-degraded    { background: rgba(210,153,34,0.15); color: var(--yellow); }
+    .badge-down        { background: rgba(248,81,73,0.15);  color: var(--red); }
+    .badge-pending     { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+
+    .card-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .metric-value.good   { color: var(--green); }
+    .metric-value.warn   { color: var(--yellow); }
+    .metric-value.bad    { color: var(--red); }
+    .metric-value.muted  { color: var(--text-muted); font-size: 15px; }
+
+    /* -----------------------------------------------------------------------
+       Charts
+    ----------------------------------------------------------------------- */
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    canvas { display: block; width: 100% !important; }
+
+    /* -----------------------------------------------------------------------
+       Extra-metric table
+    ----------------------------------------------------------------------- */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--bg-card-alt);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:nth-child(even) { background: var(--bg-card-alt); }
+    tbody tr:hover { background: rgba(47,129,247,0.06); }
+
+    tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    /* -----------------------------------------------------------------------
+       Loading / error / empty states
+    ----------------------------------------------------------------------- */
+    .state-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .state-icon { font-size: 36px; margin-bottom: 12px; }
+    .state-message { font-size: 15px; color: var(--text-primary); margin-bottom: 6px; }
+    .state-detail  { font-size: 13px; }
+
+    /* Hidden utility */
+    .hidden { display: none !important; }
+
+    /* -----------------------------------------------------------------------
+       Responsive
+    ----------------------------------------------------------------------- */
+    @media (max-width: 600px) {
+      main { padding: 16px; }
+      .card-metrics { grid-template-columns: 1fr; }
+      .header-meta { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      <div class="wordmark">statpulse</div>
+      <div class="subtitle">SIS-CC .Stat Suite API Monitor</div>
+    </div>
+    <div class="header-meta">
+      Auto-updates every 6h<br>
+      Last updated: <strong id="last-updated">—</strong>
+    </div>
+  </header>
+
+  <!-- Loading state — visible until data loads or an error occurs -->
+  <div id="loading-state" class="state-container" role="status" aria-live="polite" aria-label="Loading health data">
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="state-message">Loading health data…</div>
+    <div class="state-detail">Fetching health-log.json</div>
+  </div>
+
+  <!-- Error state — shown when fetch or parse fails -->
+  <div id="error-state" class="state-container hidden" role="alert" aria-live="assertive">
+    <div class="state-icon" aria-hidden="true">⚠️</div>
+    <div class="state-message">Could not load health data</div>
+    <div class="state-detail" id="error-detail"></div>
+  </div>
+
+  <!-- Empty state — shown when health-log.json is an empty array -->
+  <div id="empty-state" class="state-container hidden" role="status">
+    <div class="state-icon" aria-hidden="true">🕐</div>
+    <div class="state-message">No data yet — first check pending</div>
+    <div class="state-detail">GitHub Actions will populate this dashboard on the next scheduled run.</div>
+  </div>
+
+  <!-- Main dashboard — hidden until data is ready -->
+  <main id="dashboard" class="hidden" aria-label="API health dashboard">
+
+    <!-- Status cards -->
+    <section aria-labelledby="status-heading">
+      <h2 id="status-heading">Endpoint Status</h2>
+      <div class="cards-grid" id="cards-grid" role="list" aria-label="Endpoint status cards">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- Response-time chart -->
+    <section aria-labelledby="chart-heading">
+      <h2 id="chart-heading">Response Times — Last 20 Checks</h2>
+      <div class="chart-container">
+        <canvas id="response-chart" role="img" aria-label="Line chart showing response times over the last 20 health checks for all three SDMX endpoints"></canvas>
+      </div>
+    </section>
+
+    <!-- Extra-metric trends table -->
+    <section aria-labelledby="metrics-heading">
+      <h2 id="metrics-heading">Domain Metric Trends</h2>
+      <div class="table-wrapper">
+        <table aria-label="Domain-specific metric values over time">
+          <thead>
+            <tr>
+              <th scope="col">Timestamp</th>
+              <th scope="col">Structures (DSD count)</th>
+              <th scope="col">Data Query (KB)</th>
+              <th scope="col">Codelists (count)</th>
+            </tr>
+          </thead>
+          <tbody id="metrics-tbody">
+            <!-- Injected by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div>
+      <a href="https://sis-cc.gitlab.io/dotstatsuite-documentation/" target="_blank" rel="noopener noreferrer">SIS-CC Docs</a>
+      &bull;
+      <a href="https://github.com/erenkahraman/statpulse" target="_blank" rel="noopener noreferrer">GitHub Repo</a>
+    </div>
+    <div class="footer-disclaimer">
+      Built as a portfolio project for OECD SDD/SDPS PM role | Not officially affiliated with OECD or SIS-CC
+    </div>
+  </footer>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // Constants
+    // -------------------------------------------------------------------------
+
+    // How many recent checks to plot on the response-time chart.
+    // 20 balances readability vs. showing enough trend context.
+    const CHART_WINDOW = 20;
+
+    // Endpoint names exactly as written in check-health.js — used to filter
+    // the flat log array into per-endpoint series.
+    const ENDPOINT_NAMES = ['Structures', 'Data Query', 'Codelists'];
+
+    // Chart line colours match the GitHub colour palette used elsewhere in the UI.
+    const LINE_COLORS = {
+      'Structures':  '#2f81f7',
+      'Data Query':  '#3fb950',
+      'Codelists':   '#d29922',
+    };
+
+    // Response-time thresholds for colouring the metric value in cards.
+    const RESPONSE_WARN_MS  = 2000;
+    const RESPONSE_BAD_MS   = 3000;
+    const UPTIME_WARN_PCT   = 99;
+    const UPTIME_BAD_PCT    = 95;
+
+    // -------------------------------------------------------------------------
+    // DOM references — cached once to avoid repeated querySelector calls
+    // -------------------------------------------------------------------------
+    const $loading   = document.getElementById('loading-state');
+    const $error     = document.getElementById('error-state');
+    const $errorDet  = document.getElementById('error-detail');
+    const $empty     = document.getElementById('empty-state');
+    const $dashboard = document.getElementById('dashboard');
+    const $lastUpd   = document.getElementById('last-updated');
+    const $cards     = document.getElementById('cards-grid');
+    const $tbody     = document.getElementById('metrics-tbody');
+
+    // -------------------------------------------------------------------------
+    // State transitions — exactly one state visible at a time
+    // -------------------------------------------------------------------------
+
+    function showError(message) {
+      $loading.classList.add('hidden');
+      $errorDet.textContent = message;
+      $error.classList.remove('hidden');
+    }
+
+    function showEmpty() {
+      $loading.classList.add('hidden');
+      $empty.classList.remove('hidden');
+    }
+
+    function showDashboard() {
+      $loading.classList.add('hidden');
+      $dashboard.classList.remove('hidden');
+    }
+
+    // -------------------------------------------------------------------------
+    // Data helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Groups the flat log array into one array per endpoint, sorted oldest→newest.
+     * Filtering by endpoint name rather than assuming positional order makes the
+     * code resilient to future additions or re-ordering of endpoints.
+     * @param {Array} log
+     * @returns {Object} Map of endpointName → sorted records
+     */
+    function groupByEndpoint(log) {
+      const groups = {};
+      for (const name of ENDPOINT_NAMES) {
+        groups[name] = log
+          .filter(r => r.endpoint === name)
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      }
+      return groups;
+    }
+
+    /**
+     * Computes uptime percentage for a set of records.
+     * @param {Array} records
+     * @returns {string} Formatted percentage string
+     */
+    function uptimePercent(records) {
+      if (!records.length) return '—';
+      const ok = records.filter(r => r.ok).length;
+      return ((ok / records.length) * 100).toFixed(1) + '%';
+    }
+
+    /**
+     * Returns a CSS class name based on a numeric uptime value.
+     * @param {string} pctStr
+     */
+    function uptimeClass(pctStr) {
+      const v = parseFloat(pctStr);
+      if (isNaN(v)) return 'muted';
+      if (v >= UPTIME_WARN_PCT) return 'good';
+      if (v >= UPTIME_BAD_PCT)  return 'warn';
+      return 'bad';
+    }
+
+    /**
+     * Returns a CSS class name based on a response time in ms.
+     * @param {number|null} ms
+     */
+    function responseClass(ms) {
+      if (ms === null || ms === undefined) return 'muted';
+      if (ms < RESPONSE_WARN_MS) return 'good';
+      if (ms < RESPONSE_BAD_MS)  return 'warn';
+      return 'bad';
+    }
+
+    /**
+     * Determines operational status from the most recent record.
+     * @param {Object|null} latest
+     * @param {string} uptime
+     * @returns {{ label: string, cssClass: string }}
+     */
+    function statusBadge(latest, uptime) {
+      if (!latest) return { label: 'PENDING', cssClass: 'badge-pending' };
+      if (!latest.ok) return { label: 'DOWN', cssClass: 'badge-down' };
+      const v = parseFloat(uptime);
+      if (!isNaN(v) && v < UPTIME_WARN_PCT) return { label: 'DEGRADED', cssClass: 'badge-degraded' };
+      return { label: 'OPERATIONAL', cssClass: 'badge-operational' };
+    }
+
+    /**
+     * Formats a timestamp for display in the user's local timezone.
+     * Using toLocaleString() avoids the overhead of a date library while still
+     * giving users a human-readable representation in their own timezone.
+     * @param {string} isoString
+     * @returns {string}
+     */
+    function formatLocal(isoString) {
+      try {
+        return new Date(isoString).toLocaleString();
+      } catch {
+        return isoString;
+      }
+    }
+
+    /**
+     * Formats a timestamp for the chart x-axis labels (shorter).
+     * @param {string} isoString
+     * @returns {string}
+     */
+    function formatChartLabel(isoString) {
+      try {
+        const d = new Date(isoString);
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+          + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return isoString;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Rendering
+    // -------------------------------------------------------------------------
+
+    /**
+     * Renders the three status cards.
+     * @param {Object} groups - Output of groupByEndpoint()
+     */
+    function renderCards(groups) {
+      $cards.innerHTML = '';
+
+      for (const name of ENDPOINT_NAMES) {
+        const records = groups[name];
+        const latest  = records.length ? records[records.length - 1] : null;
+        const uptime  = uptimePercent(records);
+        const badge   = statusBadge(latest, uptime);
+        const respMs  = latest?.responseTimeMs ?? null;
+
+        const article = document.createElement('article');
+        article.className = 'card';
+        article.setAttribute('role', 'listitem');
+        article.setAttribute('aria-label', `${name} endpoint status: ${badge.label}`);
+
+        article.innerHTML = `
+          <div class="card-header">
+            <span class="card-name">${name}</span>
+            <span class="badge ${badge.cssClass}" role="status">${badge.label}</span>
+          </div>
+          <div class="card-metrics">
+            <div>
+              <div class="metric-label">Response time</div>
+              <div class="metric-value ${responseClass(respMs)}">
+                ${respMs !== null ? respMs + 'ms' : '—'}
+              </div>
+            </div>
+            <div>
+              <div class="metric-label">Uptime (all checks)</div>
+              <div class="metric-value ${uptimeClass(uptime)}">${uptime}</div>
+            </div>
+          </div>
+        `;
+
+        $cards.appendChild(article);
+      }
+    }
+
+    /**
+     * Renders the response-time line chart using Chart.js.
+     * @param {Object} groups - Output of groupByEndpoint()
+     */
+    function renderChart(groups) {
+      // Use the Structures endpoint's last CHART_WINDOW timestamps as x-axis
+      // labels — all endpoints are checked together so timestamps align closely.
+      const referenceRecords = (groups['Structures'] || []).slice(-CHART_WINDOW);
+      const labels = referenceRecords.map(r => formatChartLabel(r.timestamp));
+
+      const datasets = ENDPOINT_NAMES.map(name => {
+        const records = (groups[name] || []).slice(-CHART_WINDOW);
+        return {
+          label: name,
+          data: records.map(r => r.responseTimeMs ?? null),
+          borderColor: LINE_COLORS[name],
+          backgroundColor: LINE_COLORS[name] + '20', // 12% opacity fill
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          spanGaps: true, // Draw a line through null values (timeouts)
+        };
+      });
+
+      const ctx = document.getElementById('response-chart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              labels: { color: '#8b949e', font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y + 'ms' : 'timeout'}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#8b949e', maxRotation: 40, font: { size: 11 } },
+              grid:  { color: '#21262d' }
+            },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Response time (ms)', color: '#8b949e' },
+              ticks: {
+                color: '#8b949e',
+                callback: v => v + 'ms'
+              },
+              grid: { color: '#21262d' }
+            }
+          }
+        }
+      });
+    }
+
+    /**
+     * Renders the domain-metric trends table.
+     * Rows are shown newest-first so the most recent data is immediately visible.
+     * @param {Object} groups - Output of groupByEndpoint()
+     */
+    function renderMetricsTable(groups) {
+      // Build a lookup by timestamp so we can join the three per-endpoint series.
+      const structRecs  = (groups['Structures'] || []).slice().reverse();
+      const dataRecs    = (groups['Data Query'] || []).slice().reverse();
+      const codeRecs    = (groups['Codelists'] || []).slice().reverse();
+
+      // Use the longest series as the row driver — in practice all three run
+      // together so they'll have the same timestamps.
+      const maxLen = Math.max(structRecs.length, dataRecs.length, codeRecs.length);
+
+      $tbody.innerHTML = '';
+      for (let i = 0; i < maxLen; i++) {
+        const s = structRecs[i];
+        const d = dataRecs[i];
+        const c = codeRecs[i];
+        const ts = (s || d || c)?.timestamp;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${ts ? formatLocal(ts) : '—'}</td>
+          <td>${s?.extraMetric?.value ?? '—'}</td>
+          <td>${d?.extraMetric?.value ?? '—'}</td>
+          <td>${c?.extraMetric?.value ?? '—'}</td>
+        `;
+        $tbody.appendChild(tr);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Main data-fetch flow
+    // -------------------------------------------------------------------------
+
+    async function init() {
+      try {
+        const res = await fetch('./health-log.json');
+        if (!res.ok) {
+          showError(`health-log.json returned HTTP ${res.status}. The dashboard is probably not yet deployed.`);
+          return;
+        }
+
+        let log;
+        try {
+          log = await res.json();
+        } catch {
+          showError('health-log.json could not be parsed as JSON.');
+          return;
+        }
+
+        if (!Array.isArray(log) || log.length === 0) {
+          showEmpty();
+          return;
+        }
+
+        // Surface the latest check timestamp in the header.
+        const latestTs = log.reduce((acc, r) => (r.timestamp > acc ? r.timestamp : acc), '');
+        $lastUpd.textContent = latestTs ? formatLocal(latestTs) : '—';
+
+        const groups = groupByEndpoint(log);
+
+        renderCards(groups);
+        renderChart(groups);
+        renderMetricsTable(groups);
+
+        showDashboard();
+      } catch (err) {
+        showError(`Network error: ${err.message}`);
+      }
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
