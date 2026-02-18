@@ -1,7 +1,7 @@
 # statpulse
 
-[![API Health Check](https://github.com/erenkahraman/statpulse/actions/workflows/health-check.yml/badge.svg)](https://github.com/erenkahraman/statpulse/actions/workflows/health-check.yml)
-[![Live Dashboard](https://img.shields.io/badge/dashboard-live-3fb950?logo=github)](https://erenkahraman.github.io/statpulse)
+[![API Health Check](https://github.com/erenkahraman/statpulse.github.io/actions/workflows/health-check.yml/badge.svg)](https://github.com/erenkahraman/statpulse.github.io/actions/workflows/health-check.yml)
+[![Live Dashboard](https://img.shields.io/badge/dashboard-live-3fb950?logo=github)](https://erenkahraman.github.io/statpulse.github.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f81f7.svg)](LICENSE)
 
 **Real-time API health monitoring for the SIS-CC .Stat Suite SDMX platform.**

@@ -85,7 +85,7 @@ the standard SDMX REST API at `/rest/data/{agencyID},{flowID}@{DSDid},{version}`
 From this point **statpulse** takes over the monitoring role: every six hours
 GitHub Actions calls the three representative endpoints, records uptime, response
 time, content-type validity, and catalogue-size metrics into `data/health-log.json`,
-and the dashboard at `https://erenkahraman.github.io/statpulse` surfaces those
+and the dashboard at `https://erenkahraman.github.io/statpulse.github.io` surfaces those
 metrics in real time. Anomalies detected by statpulse feed back into Phase 7
 (Monitor & Evaluate) and trigger a new iteration of the lifecycle if structural
 or data corrections are required.
