@@ -1574,73 +1574,76 @@
     initWeeklyReports();
 
     /* ── SDMX Guide Panel ────────────────────────────────────────────────── */
-    // All DOM refs are module-scoped since they're queried once after the
-    // guide panel HTML has been parsed (script tag is at bottom of <body>).
-    const guideBtn     = document.querySelector('.guide-btn');
-    const guideOverlay = document.querySelector('.guide-overlay');
-    const guidePanel   = document.querySelector('.guide-panel');
-    const guideClose   = document.querySelector('.guide-close');
-    const guideTabs    = document.querySelectorAll('.guide-tab');
-    const guidePanels  = document.querySelectorAll('.guide-tabpanel');
+    // The guide panel HTML is injected AFTER this <script> block, so any
+    // querySelector call here returns null at parse time. DOMContentLoaded
+    // defers all wiring until the full document has been parsed.
+    document.addEventListener('DOMContentLoaded', function() {
+      const guideBtn     = document.querySelector('.guide-btn');
+      const guideOverlay = document.querySelector('.guide-overlay');
+      const guidePanel   = document.querySelector('.guide-panel');
+      const guideClose   = document.querySelector('.guide-close');
+      const guideTabs    = document.querySelectorAll('.guide-tab');
+      const guidePanels  = document.querySelectorAll('.guide-tabpanel');
 
-    function openGuide() {
-      // Lock body scroll by class rather than inline style to stay consistent
-      // with the class-driven styling approach used throughout the dashboard.
-      document.body.classList.add('panel-open');
-      guideOverlay.classList.add('visible');
-      guidePanel.classList.add('open');
-      guidePanel.setAttribute('aria-hidden', 'false');
-      guideBtn.setAttribute('aria-expanded', 'true');
-    }
+      function openGuide() {
+        // Lock body scroll by class rather than inline style to stay consistent
+        // with the class-driven styling approach used throughout the dashboard.
+        document.body.classList.add('panel-open');
+        guideOverlay.classList.add('visible');
+        guidePanel.classList.add('open');
+        guidePanel.setAttribute('aria-hidden', 'false');
+        guideBtn.setAttribute('aria-expanded', 'true');
+      }
 
-    function closeGuide() {
-      document.body.classList.remove('panel-open');
-      guideOverlay.classList.remove('visible');
-      guidePanel.classList.remove('open');
-      guidePanel.setAttribute('aria-hidden', 'true');
-      guideBtn.setAttribute('aria-expanded', 'false');
-    }
+      function closeGuide() {
+        document.body.classList.remove('panel-open');
+        guideOverlay.classList.remove('visible');
+        guidePanel.classList.remove('open');
+        guidePanel.setAttribute('aria-hidden', 'true');
+        guideBtn.setAttribute('aria-expanded', 'false');
+      }
 
-    guideBtn.addEventListener('click', openGuide);
-    guideClose.addEventListener('click', closeGuide);
-    guideOverlay.addEventListener('click', closeGuide);
+      guideBtn.addEventListener('click', openGuide);
+      guideClose.addEventListener('click', closeGuide);
+      guideOverlay.addEventListener('click', closeGuide);
 
-    // Escape key closes the panel — standard accessible modal pattern.
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && guidePanel.classList.contains('open')) closeGuide();
-    });
-
-    guideTabs.forEach((tab, i) => {
-      tab.addEventListener('click', () => {
-        guideTabs.forEach(t  => { t.classList.remove('active');
-                                   t.setAttribute('aria-selected', 'false'); });
-        guidePanels.forEach(p => p.classList.add('hidden'));
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-        guidePanels[i].classList.remove('hidden');
+      // Escape key closes the panel — standard accessible modal pattern.
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && guidePanel.classList.contains('open')) closeGuide();
       });
-    });
 
-    // Accordion — each trigger collapses siblings before opening itself,
-    // so only one glossary term is expanded at a time.
-    document.querySelectorAll('.accordion-trigger').forEach(trigger => {
-      trigger.addEventListener('click', () => {
-        const item   = trigger.closest('.accordion-item');
-        const body   = item.querySelector('.accordion-body');
-        const isOpen = item.classList.contains('open');
-        // Collapse all siblings first so only one accordion item is open at a time.
-        trigger.closest('.accordion').querySelectorAll('.accordion-item').forEach(i => {
-          i.classList.remove('open');
-          i.querySelector('.accordion-body').classList.remove('expanded');
-          i.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
+      guideTabs.forEach((tab, i) => {
+        tab.addEventListener('click', () => {
+          guideTabs.forEach(t  => { t.classList.remove('active');
+                                     t.setAttribute('aria-selected', 'false'); });
+          guidePanels.forEach(p => p.classList.add('hidden'));
+          tab.classList.add('active');
+          tab.setAttribute('aria-selected', 'true');
+          guidePanels[i].classList.remove('hidden');
         });
-        if (!isOpen) {
-          item.classList.add('open');
-          body.classList.add('expanded');
-          trigger.setAttribute('aria-expanded', 'true');
-        }
       });
-    });
+
+      // Accordion — each trigger collapses siblings before opening itself,
+      // so only one glossary term is expanded at a time.
+      document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+          const item   = trigger.closest('.accordion-item');
+          const body   = item.querySelector('.accordion-body');
+          const isOpen = item.classList.contains('open');
+          // Collapse all siblings first so only one accordion item is open at a time.
+          trigger.closest('.accordion').querySelectorAll('.accordion-item').forEach(i => {
+            i.classList.remove('open');
+            i.querySelector('.accordion-body').classList.remove('expanded');
+            i.querySelector('.accordion-trigger').setAttribute('aria-expanded', 'false');
+          });
+          if (!isOpen) {
+            item.classList.add('open');
+            body.classList.add('expanded');
+            trigger.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+    }); // end DOMContentLoaded
   </script>
 
 
