@@ -83,8 +83,8 @@ Issue templates in `.github/ISSUE_TEMPLATE/` cover user stories, SDMX artefact c
 
 ```bash
 # Clone the repository
-git clone https://github.com/erenkahraman/statpulse.github.io.git
-cd statpulse.github.io
+git clone https://github.com/erenkahraman/statpulse.git
+cd statpulse
 
 # No runtime dependencies — Node 20 built-in fetch handles everything
 npm install
