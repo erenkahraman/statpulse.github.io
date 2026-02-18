@@ -1,20 +1,41 @@
 # statpulse
 
-[![API Health Check](https://github.com/erenkahraman/statpulse.github.io/actions/workflows/health-check.yml/badge.svg)](https://github.com/erenkahraman/statpulse.github.io/actions/workflows/health-check.yml)
-[![Live Dashboard](https://img.shields.io/badge/dashboard-live-3fb950?logo=github)](https://erenkahraman.github.io/statpulse.github.io)
+[![API Health Check](https://github.com/erenkahraman/statpulse/actions/workflows/health-check.yml/badge.svg)](https://github.com/erenkahraman/statpulse/actions/workflows/health-check.yml)
+[![Live Dashboard](https://img.shields.io/badge/dashboard-live-3fb950?logo=github)](https://erenkahraman.github.io/statpulse)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f81f7.svg)](LICENSE)
 
 **Real-time API health monitoring for the SIS-CC .Stat Suite SDMX platform.**
 
 ## What is this?
 
-We built statpulse to demonstrate production-grade platform observability skills in the context of the SIS-CC .Stat Suite — the open-source SDMX dissemination platform that powers OECD's Data Explorer, country NSIs, and international statistical organisations.
+I built statpulse to demonstrate production-grade platform observability skills in the context of the SIS-CC .Stat Suite — the open-source SDMX dissemination platform that powers OECD's Data Explorer, country NSIs, and international statistical organisations.
 
 Every six hours, a GitHub Actions workflow calls three public, auth-free SDMX REST API endpoints on the SIS-CC demo environment. The results — HTTP status, response time, content-type validity, and domain-specific metrics like DSD catalogue size — are committed back to this repository as `data/health-log.json`. A self-contained GitHub Pages dashboard reads that file directly and renders uptime percentages, response-time charts, and data quality trends.
 
 No backend. No database. No cloud bill.
 
 This is also a portfolio project for an OECD SDD/SDPS Product Manager role — it demonstrates hands-on familiarity with SDMX artefacts, the .Stat Suite module architecture, GSBPM-aligned data lifecycle thinking, and the kind of automated governance tooling a PM should be able to commission and own.
+
+## Why I Built This
+
+Rather than describing these capabilities in a cover letter, I built a working system that exercises them directly — using AI-assisted development to accelerate implementation while owning all architectural decisions, domain research, and product thinking. The project is a practical demonstration of the skills required for the OECD SDD/SDPS Product Manager role.
+
+### How statpulse maps to the role requirements
+
+| Role Requirement (from JD) | How this project addresses it |
+|---|---|
+| "Collect, analyse and identify user's behavioural patterns through usability tests, users surveys/feedback and analytics" | The KPI framework in `governance/kpis.yaml` defines 6 measurable indicators — including WCAG compliance and community issue resolution time — that mirror the analytics-driven product feedback loop described in the role |
+| "Develop and monitor key performance indicators to assess user satisfaction and product quality in terms of functions, accessibility, performance, scalability and security" | `governance/kpis.yaml` defines structured, machine-readable KPIs with targets, measurement methods, and owners. The automated health-check pipeline operationalises two of them (api-availability, api-response-time) with real data collected every 6 hours |
+| "Oversee, coordinate and continuously improve the lean/agile development process with the developers ensuring the successful and efficient delivery of high-quality solutions" | The GitHub Actions CI/CD pipeline, Conventional Commits discipline, and issue templates (user stories with Definition of Done, SDMX artefact change requests) reflect the Agile delivery process a PM would own and continuously improve |
+| "Perform quality assurance testing to ensure the correct functioning of the products, incl. accessibility, contribute to develop related automated tests, and define acceptance criteria" | The health-check script performs automated API validation on every run — checking HTTP status, SDMX content-type headers, and response time thresholds. Acceptance criteria are embedded in the user-story issue template |
+| "Excellent experience is required with the DevSecOps platform GitLab or GitHub and its issue, epic, board, milestone, pipeline, runner, dashboard and analytics management tools" | This project is built entirely on GitHub's DevSecOps surface: Actions pipelines, scheduled runners, Pages deployment, issue templates with labels, and a data-driven dashboard — all configured from scratch |
+| "Familiarity with Statistical Data and Metadata eXchange (SDMX) standard with a commitment to reach a good working knowledge" | The monitoring script parses live SDMX-ML XML responses, counting DataStructure and Codelist artefacts. The governance layer references SDMX-specific concepts: DSDs, Codelists, Content Constraints, the NSI web service, and the Transfer service `/init/dataflow` endpoint |
+| "Good experience working with analytical tools and key indicator dashboards, such as Google Analytics, PowerBi and Grafana" | The GitHub Pages dashboard is a purpose-built observability tool: real-time uptime cards, Chart.js response-time visualisation, domain metric trend tables, and anomaly detection alerts — conceptually equivalent to a Grafana dashboard, implemented without infrastructure cost |
+| "Contribute to setting up collaboration frameworks and best practices with SIS-CC members" | `.github/ISSUE_TEMPLATE/` includes three structured templates (user stories, SDMX artefact change requests, API health alerts) that codify collaboration norms — the same kind of framework a PM would establish with SIS-CC community members |
+| "Provide regular reporting as required" | The automated weekly report workflow opens a GitHub Issue every Monday with platform health metrics — uptime percentage, average response times, catalogue stability — structured as a stakeholder-ready summary |
+| "Innovate and Embrace Change (Level 2)" | The entire project was built using AI-assisted development (Claude Code), with architectural decisions, domain research, and product framing owned by me. Using AI as a productivity multiplier while maintaining quality ownership is precisely the kind of innovation this competency describes |
+
+*Built with Claude Code (Anthropic) — AI-assisted implementation, human-directed architecture and product thinking.*
 
 ## Architecture
 
@@ -27,7 +48,7 @@ flowchart LR
 
 ## Monitored Endpoints
 
-| Endpoint | URL | What we measure |
+| Endpoint | URL | What I measure |
 |---|---|---|
 | Structures | `https://nsi-demo-stable.siscc.org/rest/datastructure/all/all/all?detail=allstubs` | Uptime, response time, DSD catalogue count |
 | Data Query | `https://nsi-demo-stable.siscc.org/rest/data/OECD.CFE,INBOUND@TOURISM_TRIPS,2.0` | Uptime, response time, response size KB |
@@ -62,8 +83,8 @@ Issue templates in `.github/ISSUE_TEMPLATE/` cover user stories, SDMX artefact c
 
 ```bash
 # Clone the repository
-git clone https://github.com/erenkahraman/statpulse.git
-cd statpulse
+git clone https://github.com/erenkahraman/statpulse.github.io.git
+cd statpulse.github.io
 
 # No runtime dependencies — Node 20 built-in fetch handles everything
 npm install
@@ -92,7 +113,7 @@ statpulse monitors the .Stat Core REST API layer, which is the shared foundation
 
 ## Contributing
 
-We welcome issues, ideas, and pull requests. Use the issue templates in `.github/ISSUE_TEMPLATE/` to structure requests — the API health alert template is especially useful if you spot a monitoring gap.
+I welcome issues, ideas, and pull requests. Use the issue templates in `.github/ISSUE_TEMPLATE/` to structure requests — the API health alert template is especially useful if you spot a monitoring gap.
 
 ## Changelog
 
@@ -102,6 +123,12 @@ We welcome issues, ideas, and pull requests. Use the issue templates in `.github
 - Self-contained GitHub Pages dashboard with Chart.js response-time visualisation
 - Governance layer: KPI framework, DSD audit checklist, GSBPM lifecycle diagram
 - Issue templates for user stories, SDMX artefact changes, and health alerts
+
+### v1.1.0 — 2026
+
+- Rolling-average anomaly detection with warning/critical severity levels
+- Automated weekly platform health report as a GitHub Issue every Monday
+- Job description alignment section in README
 
 ---
 
