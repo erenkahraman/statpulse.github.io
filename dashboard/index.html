@@ -501,9 +501,12 @@
       z-index: 1001;
       opacity: 0;
       transition: opacity 0.25s;
+      /* opacity:0 still intercepts pointer events — disable them when
+         the overlay is not active so the rest of the page stays clickable. */
+      pointer-events: none;
     }
 
-    .guide-overlay.visible { opacity: 1; }
+    .guide-overlay.visible { opacity: 1; pointer-events: auto; }
 
     /* Panel starts fully offscreen (translateX 100%) so it cannot intercept
        pointer events when closed. cubic-bezier matches Material Design's
