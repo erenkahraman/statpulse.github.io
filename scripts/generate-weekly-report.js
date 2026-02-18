@@ -179,9 +179,10 @@ function kpiEmoji(value, target, direction) {
  * @param {Array<Object>} recentRecords - Records from the report window.
  * @param {string} reportStart      - ISO date string for the window start.
  * @param {string} reportEnd        - ISO date string for the window end.
+ * @param {string} dashboardUrl     - Derived from GITHUB_REPOSITORY at call time.
  * @returns {string} Markdown string ready to POST as a GitHub Issue body.
  */
-function buildIssueBody(stats, recentRecords, reportStart, reportEnd) {
+function buildIssueBody(stats, recentRecords, reportStart, reportEnd, dashboardUrl) {
   const totalChecks = recentRecords.length;
   const runsCount = Math.round(totalChecks / ENDPOINT_NAMES.length);
 
@@ -261,7 +262,7 @@ function buildIssueBody(stats, recentRecords, reportStart, reportEnd) {
     `| Content-Type Validity | 100% | ${contentTypeValidityPct !== null ? contentTypeValidityPct.toFixed(1) + '%' : '—'} | ${kpiEmoji(contentTypeValidityPct, 100, 'higher')} |`,
     '',
     '---',
-    '*Generated automatically by [statpulse](https://erenkahraman.github.io/statpulse) — SDMX API monitoring for the SIS-CC .Stat Suite platform.*',
+    `*Generated automatically by [statpulse](${dashboardUrl}) — SDMX API monitoring for the SIS-CC .Stat Suite platform.*`,
   ];
 
   return lines.join('\n');
@@ -322,8 +323,13 @@ async function main() {
     .toISOString().split('T')[0];
   const reportEnd = now.toISOString().split('T')[0];
 
+  // Derive the GitHub Pages URL from the repo slug rather than hard-coding it.
+  // For a project repo "owner/repo-name" the Pages URL is "https://owner.github.io/repo-name".
+  const [owner, repoName] = repo.split('/');
+  const dashboardUrl = `https://${owner}.github.io/${repoName}`;
+
   const title = `Weekly Platform Health Report — week of ${mondayStr}`;
-  const body = buildIssueBody(stats, recentRecords, reportStart, reportEnd);
+  const body = buildIssueBody(stats, recentRecords, reportStart, reportEnd, dashboardUrl);
 
   logInfo(`Creating issue: "${title}"`);
 
