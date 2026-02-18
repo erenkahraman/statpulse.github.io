@@ -1,0 +1,50 @@
+# weekly-report.yml
+# Creates a GitHub Issue every Monday summarising the past 7 days of
+# platform health data from health-log.json. The issue serves as a
+# structured, stakeholder-ready report without requiring any external
+# reporting infrastructure.
+
+name: Weekly Health Report
+
+on:
+  # 09:00 UTC Monday — early enough for European business hours, after enough
+  # Sunday data has accumulated to give a meaningful 7-day trailing window.
+  schedule:
+    - cron: '0 9 * * 1'
+
+  # Manual trigger allows testing the report format without waiting for Monday,
+  # or re-generating a report after a data backfill.
+  workflow_dispatch:
+
+# issues: write is required to create the weekly report issue.
+# contents: read is the minimum needed to check out the repo and read the log.
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  weekly-report:
+    name: Generate and publish weekly health report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate weekly report and create GitHub Issue
+        env:
+          # GITHUB_TOKEN is automatically provided by Actions — no secrets setup needed.
+          # It is scoped to issues: write which is the only permission this step uses.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/generate-weekly-report.js
