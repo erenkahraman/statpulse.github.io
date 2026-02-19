@@ -826,6 +826,225 @@
       /* Rotate arrows so the vertically-wrapped flow diagram reads top-to-bottom */
       .flow-arrow { transform: rotate(90deg); }
     }
+
+    /* -----------------------------------------------------------------------
+       Platform Reports — tabbed section wrapper replacing .reports-wrapper
+    ----------------------------------------------------------------------- */
+    .reports-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 24px 40px;
+    }
+
+    .section-header { margin-bottom: 20px; }
+
+    /* Override global h2 border-bottom so the section title has no underline */
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .section-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Tab bar — negative margin seats the 3px active indicator flush with
+       the container's 1px bottom border, matching the guide panel pattern. */
+    .reports-tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+      gap: 0;
+    }
+
+    .reports-tab {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      margin-bottom: -1px;
+    }
+
+    .reports-tab:hover { color: var(--text-primary); }
+
+    .reports-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Tab panels share the same top padding so content starts at a
+       consistent distance from the tab bar on both tabs. */
+    #tab-weekly,
+    #tab-catalogue { padding-top: 24px; }
+
+    /* -----------------------------------------------------------------------
+       Catalogue Change Report
+    ----------------------------------------------------------------------- */
+    .catalogue-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .catalogue-stat-card {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .catalogue-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+      line-height: 1.2;
+    }
+
+    /* Colour variants communicate net-change direction at a glance */
+    .catalogue-stat-value.positive { color: var(--green); }
+    .catalogue-stat-value.negative { color: var(--red); }
+    .catalogue-stat-value.neutral  { color: var(--text-muted); }
+
+    .catalogue-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .sparkline-wrapper {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .sparkline-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* The left border acts as the connecting vertical line for the timeline;
+       padding-left offsets event content past the dot markers. */
+    .catalogue-timeline {
+      position: relative;
+      padding-left: 24px;
+      border-left: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .catalogue-event {
+      position: relative;
+      padding: 0 0 24px 20px;
+    }
+
+    /* Dot overlaps the vertical border line — border matches bg-primary
+       to create a "punched out" ring effect without pseudo-elements. */
+    .event-dot {
+      position: absolute;
+      left: -28px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-primary);
+    }
+
+    .event-dot.baseline { background: var(--green); }
+    .event-dot.addition { background: var(--green); }
+    .event-dot.deletion { background: var(--red); }
+    .event-dot.mixed    { background: var(--yellow); }
+
+    .event-timestamp {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .event-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .event-baseline-note {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Compact delta table — overrides global table/thead/td styles with
+       more specific selectors so inline-report rows stay tight. */
+    .event-delta-table {
+      font-size: 12px;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .event-delta-table td,
+    .event-delta-table th {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .event-delta-table th {
+      background: var(--bg-primary);
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 12px;
+    }
+
+    /* Suppress global zebra-striping inside the compact delta table */
+    .event-delta-table tbody tr:nth-child(even) { background: transparent; }
+
+    .delta-positive { color: var(--green); font-weight: 600; }
+    .delta-negative { color: var(--red);   font-weight: 600; }
+
+    .catalogue-empty-state {
+      padding: 32px 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .catalogue-footer-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .reports-section { padding: 0 16px 32px; }
+      .catalogue-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body>
@@ -912,11 +1131,24 @@
 
   </main>
 
-  <!-- Weekly health reports — fetches GitHub Issues API independently of health-log.json
-       so it remains visible even if the health data fetch fails. -->
-  <div class="reports-wrapper">
-    <section aria-labelledby="reports-heading">
-      <h2 id="reports-heading">Weekly Health Reports</h2>
+  <!-- Platform Reports — tabbed section with Weekly Health Reports and Catalogue Changes.
+       The weekly tab fetches GitHub Issues API independently of health-log.json so it
+       remains visible even if the health data fetch fails. The catalogue tab is populated
+       by renderCatalogueReport() after health-log.json loads successfully. -->
+  <section class="reports-section" aria-labelledby="platform-reports-heading">
+    <div class="section-header">
+      <h2 id="platform-reports-heading" class="section-title">Platform Reports</h2>
+      <p class="section-subtitle">Automated analysis and governance intelligence</p>
+    </div>
+
+    <div class="reports-tab-bar" role="tablist" aria-label="Report types">
+      <button class="reports-tab active" role="tab" aria-selected="true"
+              aria-controls="tab-weekly" id="rtab-weekly">📋 Weekly Health Reports</button>
+      <button class="reports-tab" role="tab" aria-selected="false"
+              aria-controls="tab-catalogue" id="rtab-catalogue">🗂 Catalogue Changes</button>
+    </div>
+
+    <div id="tab-weekly" role="tabpanel" aria-labelledby="rtab-weekly">
       <div id="reports-loading" class="reports-state" role="status" aria-live="polite">
         <span class="reports-spinner" aria-hidden="true"></span>Loading reports…
       </div>
@@ -929,11 +1161,13 @@
         No weekly reports generated yet — the first report runs every Monday at 09:00 UTC
       </div>
       <div id="reports-list" class="reports-list hidden"
-           role="list" aria-label="Weekly health report issues">
-        <!-- Injected by JS -->
-      </div>
-    </section>
-  </div>
+           role="list" aria-label="Weekly health report issues"></div>
+    </div>
+
+    <div id="tab-catalogue" role="tabpanel" aria-labelledby="rtab-catalogue" class="hidden">
+      <div id="catalogue-container"><!-- Injected by JS after health-log.json loads --></div>
+    </div>
+  </section>
 
   <footer>
     <div>
@@ -1295,6 +1529,7 @@
         renderCards(groups);
         renderChart(groups);
         renderMetricsTable(groups);
+        renderCatalogueReport(document.getElementById('catalogue-container'), log);
 
         showDashboard();
       } catch (err) {
@@ -1570,6 +1805,266 @@
         $error.classList.remove('hidden');
       }
     }
+
+    /* ── Catalogue Change Report ─────────────────────────────────────────── */
+
+    // Module-level chart instance — destroyed before re-render to prevent
+    // Chart.js from complaining about canvas reuse.
+    let catalogueSparklineChart = null;
+
+    /**
+     * Builds the human-readable label for a detected catalogue change.
+     * @param {number} dsdDelta
+     * @param {number} codelistDelta
+     * @returns {string}
+     */
+    function buildChangeLabel(dsdDelta, codelistDelta) {
+      const parts = [];
+      if (dsdDelta !== 0) {
+        parts.push(`${dsdDelta > 0 ? '+' : ''}${dsdDelta} DSD${Math.abs(dsdDelta) !== 1 ? 's' : ''}`);
+      }
+      if (codelistDelta !== 0) {
+        parts.push(`${codelistDelta > 0 ? '+' : ''}${codelistDelta} Codelist${Math.abs(codelistDelta) !== 1 ? 's' : ''}`);
+      }
+      return parts.join(', ') + ' detected';
+    }
+
+    /**
+     * Processes health-log.json data into a catalogue change report.
+     * Groups per-endpoint records into logical check runs (by minute-level timestamp),
+     * then compares consecutive runs to detect changes in DSD and Codelist counts.
+     * @param {Array} logData - Parsed health-log.json array
+     * @returns {{ events: Array, summary: Object, sparkline: Array }}
+     */
+    function buildCatalogueReport(logData) {
+      const STRUCTURES_NAME = 'Structures';
+      const CODELISTS_NAME  = 'Codelists';
+
+      // Group per-endpoint records into per-run objects keyed by minute timestamp.
+      const runMap = new Map();
+      logData.forEach(record => {
+        const key = record.timestamp.slice(0, 16);
+        if (!runMap.has(key)) runMap.set(key, {});
+        const run = runMap.get(key);
+        if (record.endpoint === STRUCTURES_NAME) {
+          run.timestamp = record.timestamp;
+          run.dsdCount  = Number(record.extraMetric?.value) || null;
+        }
+        if (record.endpoint === CODELISTS_NAME) {
+          run.codelistCount = Number(record.extraMetric?.value) || null;
+        }
+      });
+
+      // Sort runs chronologically.
+      const runs = [...runMap.values()]
+        .filter(r => r.timestamp)
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      // Walk runs sequentially, emit baseline on first and change events on delta.
+      const events = [];
+      let baselineDsd = null, baselineCodelist = null;
+      runs.forEach((run, idx) => {
+        if (idx === 0) {
+          baselineDsd = run.dsdCount;
+          baselineCodelist = run.codelistCount;
+          events.push({
+            timestamp: run.timestamp, type: 'baseline',
+            dsdCount: run.dsdCount, codelistCount: run.codelistCount,
+            dsdDelta: 0, codelistDelta: 0,
+            label: 'Monitoring started — baseline recorded',
+          });
+          return;
+        }
+        const dsdDelta      = (run.dsdCount      ?? baselineDsd)      - (baselineDsd      ?? 0);
+        const codelistDelta = (run.codelistCount ?? baselineCodelist) - (baselineCodelist ?? 0);
+        if (dsdDelta !== 0 || codelistDelta !== 0) {
+          events.push({
+            timestamp: run.timestamp, type: 'change',
+            dsdCount: run.dsdCount, codelistCount: run.codelistCount,
+            dsdDelta, codelistDelta,
+            label: buildChangeLabel(dsdDelta, codelistDelta),
+          });
+          if (run.dsdCount      !== null) baselineDsd      = run.dsdCount;
+          if (run.codelistCount !== null) baselineCodelist = run.codelistCount;
+        }
+      });
+
+      const changeEvents = events.filter(e => e.type === 'change');
+      const latestRun    = runs[runs.length - 1] ?? {};
+      const firstRun     = runs[0] ?? {};
+      const summary = {
+        totalRuns:        runs.length,
+        totalChanges:     changeEvents.length,
+        currentDsd:       latestRun.dsdCount,
+        currentCodelist:  latestRun.codelistCount,
+        dsdNetChange:     (latestRun.dsdCount      ?? 0) - (firstRun.dsdCount      ?? 0),
+        codelistNetChange:(latestRun.codelistCount ?? 0) - (firstRun.codelistCount ?? 0),
+        monitoringSince:  firstRun.timestamp,
+      };
+
+      // Last 20 runs for sparkline.
+      const sparkline = runs.slice(-20).map(r => ({ t: r.timestamp, dsd: r.dsdCount, cl: r.codelistCount }));
+
+      return { events, summary, sparkline };
+    }
+
+    /**
+     * Renders the catalogue change report into the given container element.
+     * Builds summary stat cards, a Chart.js sparkline, and a vertical change timeline.
+     * @param {HTMLElement} container
+     * @param {Array} logData - Parsed health-log.json array
+     */
+    function renderCatalogueReport(container, logData) {
+      const { events, summary, sparkline } = buildCatalogueReport(logData);
+
+      const netDsdClass  = summary.dsdNetChange > 0 ? 'positive' : summary.dsdNetChange < 0 ? 'negative' : 'neutral';
+      const netDsdPrefix = summary.dsdNetChange > 0 ? '+' : '';
+
+      const summaryHtml = `
+        <div class="catalogue-summary-grid">
+          <div class="catalogue-stat-card">
+            <span class="catalogue-stat-value">${summary.currentDsd ?? '—'}</span>
+            <span class="catalogue-stat-label">Current DSDs</span>
+          </div>
+          <div class="catalogue-stat-card">
+            <span class="catalogue-stat-value">${summary.currentCodelist ?? '—'}</span>
+            <span class="catalogue-stat-label">Current Codelists</span>
+          </div>
+          <div class="catalogue-stat-card">
+            <span class="catalogue-stat-value ${netDsdClass}">${netDsdPrefix}${summary.dsdNetChange}</span>
+            <span class="catalogue-stat-label">Net DSD Change</span>
+          </div>
+          <div class="catalogue-stat-card">
+            <span class="catalogue-stat-value">${summary.totalChanges}</span>
+            <span class="catalogue-stat-label">Catalogue Events</span>
+          </div>
+        </div>`;
+
+      const sparklineHtml = `
+        <div class="sparkline-wrapper">
+          <div class="sparkline-title">Catalogue size — last 20 checks</div>
+          <canvas id="catalogue-sparkline" height="120" role="img"
+                  aria-label="Sparkline chart showing DSD and Codelist counts over the last 20 checks"></canvas>
+        </div>`;
+
+      let timelineHtml;
+      if (events.length === 0) {
+        timelineHtml = `<div class="catalogue-empty-state">No catalogue changes detected in the monitoring window.<br>The SDMX artefact catalogue has remained stable.</div>`;
+      } else {
+        const items = [...events].reverse().map(ev => {
+          const dotClass = ev.type === 'baseline'                               ? 'baseline'
+            : ev.dsdDelta > 0  && ev.codelistDelta >= 0                        ? 'addition'
+            : ev.dsdDelta < 0  && ev.codelistDelta <= 0                        ? 'deletion'
+            :                                                                    'mixed';
+
+          let bodyHtml;
+          if (ev.type === 'baseline') {
+            bodyHtml = `<div class="event-baseline-note">Baseline: ${ev.dsdCount ?? '—'} DSDs, ${ev.codelistCount ?? '—'} Codelists</div>`;
+          } else {
+            const rows = [];
+            if (ev.dsdDelta !== 0) {
+              const prev = (ev.dsdCount      ?? 0) - ev.dsdDelta;
+              const dc   = ev.dsdDelta > 0 ? 'delta-positive' : 'delta-negative';
+              rows.push(`<tr><td>DSDs</td><td>${prev}</td><td>${ev.dsdCount ?? '—'}</td><td class="${dc}">${ev.dsdDelta > 0 ? '+' : ''}${ev.dsdDelta}</td></tr>`);
+            }
+            if (ev.codelistDelta !== 0) {
+              const prev = (ev.codelistCount ?? 0) - ev.codelistDelta;
+              const dc   = ev.codelistDelta > 0 ? 'delta-positive' : 'delta-negative';
+              rows.push(`<tr><td>Codelists</td><td>${prev}</td><td>${ev.codelistCount ?? '—'}</td><td class="${dc}">${ev.codelistDelta > 0 ? '+' : ''}${ev.codelistDelta}</td></tr>`);
+            }
+            bodyHtml = `<table class="event-delta-table"><thead><tr><th>Metric</th><th>Before</th><th>After</th><th>Change</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+          }
+
+          return `<div class="catalogue-event">
+            <div class="event-dot ${dotClass}" aria-hidden="true"></div>
+            <div class="event-timestamp">${formatLocal(ev.timestamp)}</div>
+            <div class="event-label">${ev.label}</div>
+            ${bodyHtml}
+          </div>`;
+        }).join('');
+        timelineHtml = `<div class="catalogue-timeline">${items}</div>`;
+      }
+
+      const footerHtml = `<p class="catalogue-footer-note">Changes are detected by comparing consecutive 6-hour health check snapshots. Intra-check changes may not be captured if they occur and revert between monitoring intervals.</p>`;
+
+      container.innerHTML = summaryHtml + sparklineHtml + timelineHtml + footerHtml;
+
+      // Destroy any previous sparkline chart before creating a new one (Chart.js
+      // throws if the same canvas is reused without first destroying the old instance).
+      if (catalogueSparklineChart) {
+        catalogueSparklineChart.destroy();
+        catalogueSparklineChart = null;
+      }
+
+      if (sparkline.length > 0) {
+        const ctx = document.getElementById('catalogue-sparkline').getContext('2d');
+        catalogueSparklineChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: sparkline.map(p => formatChartLabel(p.t)),
+            datasets: [
+              {
+                label: 'DSDs',
+                data: sparkline.map(p => p.dsd),
+                borderColor: '#2f81f7',
+                backgroundColor: '#2f81f720',
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.3,
+                spanGaps: true,
+              },
+              {
+                label: 'Codelists',
+                data: sparkline.map(p => p.cl),
+                borderColor: '#3fb950',
+                backgroundColor: '#3fb95020',
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.3,
+                spanGaps: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  title: items => formatLocal(sparkline[items[0].dataIndex]?.t ?? ''),
+                  label: item  => `${item.dataset.label}: ${item.parsed.y ?? '—'}`,
+                },
+              },
+            },
+            scales: {
+              x: { display: false },
+              y: { display: false },
+            },
+          },
+        });
+      }
+    }
+
+    /* ── Platform Reports tab switching ──────────────────────────────────── */
+    // The tab buttons are in the HTML above this <script> block, so they are
+    // available in the DOM immediately — no DOMContentLoaded needed.
+    document.querySelectorAll('.reports-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.reports-tab').forEach(t => {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        document.getElementById('tab-weekly').classList.add('hidden');
+        document.getElementById('tab-catalogue').classList.add('hidden');
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+        document.getElementById(tab.getAttribute('aria-controls')).classList.remove('hidden');
+      });
+    });
 
     initWeeklyReports();
 
