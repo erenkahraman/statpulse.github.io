@@ -2013,47 +2013,40 @@
         if (window._sparkDsd) { window._sparkDsd.destroy(); }
         if (window._sparkCl)  { window._sparkCl.destroy();  }
 
-        const sparklineConfig = (data, color, label) => ({
-          type: 'line',
-          data: {
-            labels: data.map(r => new Date(r.t).toLocaleString()),
-            datasets: [{
-              label,
-              data: data.map(r => r.dsd ?? r.cl),
-              borderColor: color,
-              backgroundColor: color + '1a',
-              borderWidth: 2,
-              pointRadius: data.length <= 5 ? 3 : 0,
-              fill: true,
-              tension: 0.3,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { display: false },
-              y: {
-                display: false,
-                // Per-series auto-scaling: min and max derived only from this
-                // dataset so the line fills the chart height meaningfully.
-                min: (ctx) => {
-                  const vals = ctx.chart.data.datasets[0].data
-                    .filter(v => v != null);
-                  if (!vals.length) return 0;
-                  return Math.floor(Math.min(...vals) * 0.98);
-                },
-                max: (ctx) => {
-                  const vals = ctx.chart.data.datasets[0].data
-                    .filter(v => v != null);
-                  if (!vals.length) return 100;
-                  return Math.ceil(Math.max(...vals) * 1.02);
-                }
+        // min/max on Chart.js scale config must be static numbers — they are not
+        // scriptable options in Chart.js 4.x, so passing a callback is silently
+        // ignored (coerces to NaN → treated as unset → falls back to a 0 baseline).
+        // Compute the per-series bounds here, before building the config object.
+        const sparklineConfig = (data, color, label) => {
+          const vals = data.map(r => r.dsd ?? r.cl).filter(v => v != null);
+          const yMin = vals.length ? Math.floor(Math.min(...vals) * 0.98) : 0;
+          const yMax = vals.length ? Math.ceil(Math.max(...vals) * 1.02) : 100;
+          return {
+            type: 'line',
+            data: {
+              labels: data.map(r => new Date(r.t).toLocaleString()),
+              datasets: [{
+                label,
+                data: data.map(r => r.dsd ?? r.cl),
+                borderColor: color,
+                backgroundColor: color + '1a',
+                borderWidth: 2,
+                pointRadius: data.length <= 5 ? 3 : 0,
+                fill: true,
+                tension: 0.3,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { display: false },
+                y: { display: false, min: yMin, max: yMax },
               }
             }
-          }
-        });
+          };
+        };
 
         window._sparkDsd = new Chart(
           document.getElementById('sparkline-dsd'),
