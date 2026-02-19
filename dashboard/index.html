@@ -944,6 +944,18 @@
       margin-bottom: 8px;
     }
 
+    .sparkline-duo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .sparkline-item-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
     /* The left border acts as the connecting vertical line for the timeline;
        padding-left offsets event content past the dot markers. */
     .catalogue-timeline {
@@ -1808,10 +1820,6 @@
 
     /* ── Catalogue Change Report ─────────────────────────────────────────── */
 
-    // Module-level chart instance — destroyed before re-render to prevent
-    // Chart.js from complaining about canvas reuse.
-    let catalogueSparklineChart = null;
-
     /**
      * Builds the human-readable label for a detected catalogue change.
      * @param {number} dsdDelta
@@ -1942,9 +1950,17 @@
 
       const sparklineHtml = `
         <div class="sparkline-wrapper">
-          <div class="sparkline-title">Catalogue size — last 20 checks</div>
-          <canvas id="catalogue-sparkline" height="120" role="img"
-                  aria-label="Sparkline chart showing DSD and Codelist counts over the last 20 checks"></canvas>
+          <p class="sparkline-title">Catalogue size over last 20 checks</p>
+          <div class="sparkline-duo">
+            <div class="sparkline-item">
+              <p class="sparkline-item-label">Data Structures (DSDs)</p>
+              <canvas id="sparkline-dsd" height="80"></canvas>
+            </div>
+            <div class="sparkline-item">
+              <p class="sparkline-item-label">Codelists</p>
+              <canvas id="sparkline-cl" height="80"></canvas>
+            </div>
+          </div>
         </div>`;
 
       let timelineHtml;
@@ -1989,85 +2005,73 @@
 
       container.innerHTML = summaryHtml + sparklineHtml + timelineHtml + footerHtml;
 
-      // Destroy any previous sparkline chart before creating a new one (Chart.js
-      // throws if the same canvas is reused without first destroying the old instance).
-      if (catalogueSparklineChart) {
-        catalogueSparklineChart.destroy();
-        catalogueSparklineChart = null;
-      }
-
       if (sparkline.length > 0) {
-        const ctx = document.getElementById('catalogue-sparkline').getContext('2d');
-        catalogueSparklineChart = new Chart(ctx, {
+        /* Two independent charts prevent the 5× magnitude gap between DSD counts
+           (~530) and Codelist counts (~2591) from collapsing one series to the
+           chart floor on a shared Y-axis. Each chart auto-scales to its own range. */
+
+        if (window._sparkDsd) { window._sparkDsd.destroy(); }
+        if (window._sparkCl)  { window._sparkCl.destroy();  }
+
+        const sparklineConfig = (data, color, label) => ({
           type: 'line',
           data: {
-            labels: sparkline.map(p => formatChartLabel(p.t)),
-            datasets: [
-              {
-                label: 'DSDs',
-                data: sparkline.map(p => p.dsd),
-                borderColor: '#2f81f7',
-                backgroundColor: '#2f81f720',
-                borderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 4,
-                tension: 0.3,
-                spanGaps: true,
-              },
-              {
-                label: 'Codelists',
-                data: sparkline.map(p => p.cl),
-                borderColor: '#3fb950',
-                backgroundColor: '#3fb95020',
-                borderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 4,
-                tension: 0.3,
-                spanGaps: true,
-              },
-            ],
+            labels: data.map(r => new Date(r.t).toLocaleString()),
+            datasets: [{
+              label,
+              data: data.map(r => r.dsd ?? r.cl),
+              borderColor: color,
+              backgroundColor: color + '1a',
+              borderWidth: 2,
+              pointRadius: data.length <= 5 ? 3 : 0,
+              fill: true,
+              tension: 0.3,
+            }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  title: items => formatLocal(sparkline[items[0].dataIndex]?.t ?? ''),
-                  label: item  => `${item.dataset.label}: ${item.parsed.y ?? '—'}`,
-                },
-              },
-            },
+            plugins: { legend: { display: false } },
             scales: {
               x: { display: false },
               y: {
                 display: false,
-                // Start Y-axis just below the minimum value in the dataset rather than
-                // at zero — catalogue counts are always large numbers (500+ DSDs, 2000+
-                // codelists) so a zero baseline makes all variance visually disappear.
-                min: (context) => {
-                  const values = context.chart.data.datasets
-                    .flatMap(ds => ds.data)
-                    .filter(v => v !== null && v !== undefined);
-                  if (values.length === 0) return 0;
-                  const minVal = Math.min(...values);
-                  // 2% padding below minimum so the line never touches the chart floor.
-                  return Math.floor(minVal * 0.98);
+                // Per-series auto-scaling: min and max derived only from this
+                // dataset so the line fills the chart height meaningfully.
+                min: (ctx) => {
+                  const vals = ctx.chart.data.datasets[0].data
+                    .filter(v => v != null);
+                  if (!vals.length) return 0;
+                  return Math.floor(Math.min(...vals) * 0.98);
                 },
-                max: (context) => {
-                  const values = context.chart.data.datasets
-                    .flatMap(ds => ds.data)
-                    .filter(v => v !== null && v !== undefined);
-                  if (values.length === 0) return 100;
-                  const maxVal = Math.max(...values);
-                  return Math.ceil(maxVal * 1.02);
-                },
-              },
-            },
-          },
+                max: (ctx) => {
+                  const vals = ctx.chart.data.datasets[0].data
+                    .filter(v => v != null);
+                  if (!vals.length) return 100;
+                  return Math.ceil(Math.max(...vals) * 1.02);
+                }
+              }
+            }
+          }
         });
+
+        window._sparkDsd = new Chart(
+          document.getElementById('sparkline-dsd'),
+          sparklineConfig(
+            sparkline.map(r => ({ t: r.t, dsd: r.dsd })),
+            '#2f81f7',
+            'DSDs'
+          )
+        );
+
+        window._sparkCl = new Chart(
+          document.getElementById('sparkline-cl'),
+          sparklineConfig(
+            sparkline.map(r => ({ t: r.t, cl: r.cl })),
+            '#3fb950',
+            'Codelists'
+          )
+        );
       }
     }
 
