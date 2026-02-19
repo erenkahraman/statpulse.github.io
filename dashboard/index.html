@@ -477,7 +477,7 @@
       bottom: 24px;
       right: 24px;
       z-index: 1000;
-      background: var(--accent);
+      background: #1357b0;
       color: #fff;
       border: none;
       border-radius: 24px;
@@ -489,7 +489,7 @@
       transition: background 0.15s, transform 0.1s;
     }
 
-    .guide-btn:hover  { background: var(--accent-hover); }
+    .guide-btn:hover  { background: #0f4a9c; }
     .guide-btn:active { transform: scale(0.97); }
 
     /* Overlay fades in separately from the panel slide so both transitions
@@ -1505,6 +1505,26 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Accessibility status banner -->
+    <div class="a11y-status-banner" role="status" aria-label="Accessibility audit status">
+      <div class="a11y-score-block">
+        <span class="a11y-score-number">0</span>
+        <span class="a11y-score-label">Critical</span>
+      </div>
+      <div class="a11y-score-block">
+        <span class="a11y-score-number">0</span>
+        <span class="a11y-score-label">Serious</span>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Accessibility Audit</div>
+        <div style="font-size:11px;color:var(--text-muted);">Last run: 2026-02-19 · axe-core v4.11.1 · WCAG 2.1 AA</div>
+      </div>
+      <span class="a11y-wcag-badge">WCAG 2.1 AA</span>
+      <a class="a11y-audit-link"
+         href="https://github.com/erenkahraman/statpulse/blob/main/governance/accessibility-audit.md"
+         target="_blank" rel="noopener">View full audit →</a>
     </div>
 
     <!-- Status cards -->
@@ -2722,6 +2742,7 @@
         document.body.classList.add('panel-open');
         guideOverlay.classList.add('visible');
         guidePanel.classList.add('open');
+        guidePanel.removeAttribute('inert');
         guidePanel.setAttribute('aria-hidden', 'false');
         guideBtn.setAttribute('aria-expanded', 'true');
       }
@@ -2730,6 +2751,7 @@
         document.body.classList.remove('panel-open');
         guideOverlay.classList.remove('visible');
         guidePanel.classList.remove('open');
+        guidePanel.setAttribute('inert', '');
         guidePanel.setAttribute('aria-hidden', 'true');
         guideBtn.setAttribute('aria-expanded', 'false');
       }
@@ -2800,7 +2822,8 @@
          class="guide-panel"
          role="complementary"
          aria-label="SDMX Reference Guide"
-         aria-hidden="true">
+         aria-hidden="true"
+         inert>
 
     <div class="guide-panel-header">
       <span class="guide-panel-title">SDMX Reference Guide</span>
