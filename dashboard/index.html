@@ -2042,7 +2042,29 @@
             },
             scales: {
               x: { display: false },
-              y: { display: false },
+              y: {
+                display: false,
+                // Start Y-axis just below the minimum value in the dataset rather than
+                // at zero — catalogue counts are always large numbers (500+ DSDs, 2000+
+                // codelists) so a zero baseline makes all variance visually disappear.
+                min: (context) => {
+                  const values = context.chart.data.datasets
+                    .flatMap(ds => ds.data)
+                    .filter(v => v !== null && v !== undefined);
+                  if (values.length === 0) return 0;
+                  const minVal = Math.min(...values);
+                  // 2% padding below minimum so the line never touches the chart floor.
+                  return Math.floor(minVal * 0.98);
+                },
+                max: (context) => {
+                  const values = context.chart.data.datasets
+                    .flatMap(ds => ds.data)
+                    .filter(v => v !== null && v !== undefined);
+                  if (values.length === 0) return 100;
+                  const maxVal = Math.max(...values);
+                  return Math.ceil(maxVal * 1.02);
+                },
+              },
             },
           },
         });
@@ -2195,12 +2217,16 @@
         <p class="guide-prose">statpulse is an automated API health monitoring platform
           built specifically for the SIS-CC .Stat Suite — the open-source SDMX dissemination
           platform used by OECD, national statistical institutes, and international
-          organisations to publish official statistics.</p>
+          organisations to publish official statistics. It monitors three live SDMX endpoints
+          every six hours, detects performance anomalies using rolling averages, tracks
+          structural catalogue changes over time, and publishes weekly governance reports
+          automatically as GitHub Issues — all running on free GitHub infrastructure with
+          no backend or database.</p>
 
-        <!-- CSS-only flow diagram — three boxes represent the monitoring pipeline -->
+        <!-- CSS-only flow diagram — four boxes represent the full monitoring pipeline -->
         <div class="flow-diagram"
              role="img"
-             aria-label="Architecture: GitHub Actions checks SDMX API every 6 hours, results shown in this dashboard">
+             aria-label="Architecture: GitHub Actions checks SDMX API every 6 hours, results shown in dashboard and published as weekly GitHub Issues">
           <div class="flow-box">
             <span class="flow-icon" aria-hidden="true">⚙️</span>
             <span class="flow-label">GitHub Actions</span>
@@ -2215,8 +2241,14 @@
           <span class="flow-arrow" aria-hidden="true">→</span>
           <div class="flow-box">
             <span class="flow-icon" aria-hidden="true">📊</span>
-            <span class="flow-label">This Dashboard</span>
+            <span class="flow-label">Dashboard + Reports</span>
             <span class="flow-desc">GitHub Pages</span>
+          </div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-box">
+            <span class="flow-icon" aria-hidden="true">📋</span>
+            <span class="flow-label">GitHub Issues</span>
+            <span class="flow-desc">Weekly auto-reports</span>
           </div>
         </div>
 
@@ -2473,6 +2505,17 @@
             <p class="howto-text">Every Monday at 09:00 UTC, a GitHub Actions workflow
               generates a structured platform health report as a GitHub Issue. The section
               below fetches and renders these reports inline.</p>
+          </div>
+        </div>
+
+        <div class="howto-block">
+          <span class="howto-icon" aria-hidden="true">🗂</span>
+          <div>
+            <p class="howto-title">Catalogue Change Report</p>
+            <p class="howto-text">Tracks additions and deletions to the SDMX artefact
+              catalogue over time. Each monitoring run compares the current DSD and
+              Codelist counts against the previous check. Changes are surfaced as
+              timestamped events in a vertical timeline with before/after delta tables.</p>
           </div>
         </div>
 
