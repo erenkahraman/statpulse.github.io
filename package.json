@@ -4,11 +4,15 @@
   "description": "Production-grade API health monitoring for the SIS-CC .Stat Suite SDMX platform",
   "type": "module",
   "scripts": {
-    "check": "node scripts/check-health.js"
+    "check": "node scripts/check-health.js",
+    "audit:a11y": "node scripts/accessibility-audit.js"
   },
-  "dependencies": {},
   "engines": {
     "node": ">=20.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "axe-core": "^4.11.1",
+    "puppeteer": "^24.37.4"
+  }
 }

@@ -1,0 +1,51 @@
+name: Accessibility Audit
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dashboard/index.html'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Puppeteer browser
+        run: npx puppeteer browsers install chrome
+
+      - name: Run accessibility audit
+        run: npm run audit:a11y
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility-audit-report
+          path: governance/accessibility-audit.md
+          retention-days: 90
+
+      - name: Commit updated audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add governance/accessibility-audit.md
+          git diff --staged --quiet || git commit -m "chore(governance): update accessibility audit report [skip ci]"
+          git push
